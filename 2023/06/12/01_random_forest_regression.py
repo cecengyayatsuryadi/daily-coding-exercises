@@ -5,7 +5,7 @@ Prediksi HK
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 
-# Data yang diberikan
+# Data tanggal dan angka HK
 dates = [
     "Minggu, 11 Juni 2023",
     "Sabtu, 10 Juni 2023",
