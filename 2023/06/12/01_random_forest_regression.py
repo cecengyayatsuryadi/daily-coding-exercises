@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-import joblib
+from sklearn.model_selection import GridSearchCV
 
 # Set locale ke bahasa Indonesia
 locale.setlocale(locale.LC_TIME, "id_ID")
@@ -20,8 +20,36 @@ angka_hk = dataset["keluaran"].values.tolist()
 # Mengubah tanggal menjadi fitur numerik
 numerical_dates = np.arange(len(tanggal_hk)).reshape(-1, 1)
 
-# Inisialisasi dan latih model Random Forest Regression
-model = RandomForestRegressor(n_estimators=100, random_state=42)
+# Inisialisasi model Random Forest Regression
+model = RandomForestRegressor(random_state=42)
+
+# Definisikan hyperparameter yang ingin diuji dengan rentang yang lebih luas
+param_grid = {
+    "n_estimators": [100, 200, 500, 1000],
+    "max_depth": [None, 5, 10, 20],
+    "min_samples_split": [2, 5, 10, 20],
+    "min_samples_leaf": [1, 2, 4, 8],
+}
+
+# Inisialisasi objek GridSearchCV dengan validasi silang 5-fold
+grid_search = GridSearchCV(model, param_grid, cv=5)
+
+# Latih model menggunakan GridSearchCV
+grid_search.fit(numerical_dates, angka_hk)
+
+# Ambil kombinasi hyperparameter terbaik
+best_params = grid_search.best_params_
+
+# Inisialisasi model dengan kombinasi hyperparameter terbaik
+model = RandomForestRegressor(
+    n_estimators=best_params["n_estimators"],
+    max_depth=best_params["max_depth"],
+    min_samples_split=best_params["min_samples_split"],
+    min_samples_leaf=best_params["min_samples_leaf"],
+    random_state=42,
+)
+
+# Latih model dengan dataset lengkap menggunakan hyperparameter terbaik
 model.fit(numerical_dates, angka_hk)
 
 # Ambil tanggal terakhir dari dataset
@@ -91,16 +119,16 @@ def plot_prediction(tanggal_hk, angka_hk, prediction):
     ax.set_title("Prediksi Angka HK")
     ax.grid(True)
     ax.legend()
-    plt.savefig("plot.png")
+
+    # Tambahkan teks pada titik prediksi
+    ax.text(
+        next_numerical_date + 0.1,
+        int(prediction),
+        str(int(prediction)),
+        verticalalignment="center",
+    )
+
     plt.show()
 
 
 plot_prediction(tanggal_hk, angka_hk, prediction)
-
-# Simpan model ke dalam file
-joblib.dump(model, "model.joblib")
-
-# Output:
-# Senin, 12 Juni 2023     3227
-# MAE: 1162.72
-# RMSE: 1308.59
